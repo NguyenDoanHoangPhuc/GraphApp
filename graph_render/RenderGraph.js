@@ -1,29 +1,56 @@
 import React, { useState, useEffect} from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Pressable } from 'react-native';
 import Svg, { Circle, Text as SvgText, G, Line, Path, Polygon } from 'react-native-svg';
 
 import Graph, { Vertex, Edge, UndirectedSimpleGraph } from '../graph_data/Graph.js'
+import color from '../constants/color.js';
 
 
+const checkDirectGraph = (graph) => {
+  if (graph == 'UndirectedSimpleGraph' ||
+      graph == 'UndirectedMultiGraph' ||
+      graph == 'PseudoGraph')
+      return 'undirected';
+  else return 'directed';
+}
 
 function RenderGraph(props) {
-  const typeGraph = props.type;
+  const typeGraph = checkDirectGraph(props.type);
   const lock = props.lock;
+  const showWeight = props.showWeight;
+  
+  
+
+  const theme = {
+    'numberStroke': color.numberStroke,
+    'vertexStroke': color.vertexStroke,
+    'stroke': color.lineStroke,
+  }
+
+
 
   const [myGraph, setMyGraph] = useState(props.data);
-  const [vertices, setVertices] = useState(myGraph.vertices);
-  const [edges, setEdges] = useState(myGraph.edges);
-  
+  const [vertices, setVertices] = useState(props.data.vertices);
+  const [edges, setEdges] = useState(props.data.edges);
+
 
   const [loops, setLoops] = useState(myGraph.edges.filter((item) => item.isLoop));
   const [multiEdges, setMultiEdges] = useState(myGraph.edges.filter((item) => !item.isLoop));
 
+
+
+  //addVertexFunction
+  
+
+
   function moveVertexAndEdge(index, x, y) {
     if (lock) return;
     let newVertices = vertices.map((vertex) => vertex.deepCopy())
-    newVertices[index] = new Vertex(newVertices[index].id, x, y);
+    newVertices[index] = new Vertex(newVertices[index].id, x, y, newVertices[index].color);
     setVertices(newVertices);
   }
+
+  
 
   useEffect(()=>{
     let newEdges = edges.map((edge) => edge.deepCopy());
@@ -43,43 +70,60 @@ function RenderGraph(props) {
     newGraph.vertices = vertices;
     newGraph.edges = edges;
     setMyGraph(newGraph);
-  },[vertices])
+  },[vertices, myGraph])
 
 
+//add Edge
 
+const [isAddEdge, setIsAddEdge] = useState(true);
+const [beginVertex, setBeginVertex] = useState(null);
+
+function handleAddEdge(index) {
+  if (beginVertex === null) setBeginVertex(index);
+  else {
+    let newGraph = myGraph;
+    newGraph.addEdgeById(beginVertex, index);
+    setBeginVertex(null);
+    
+    setMyGraph(newGraph);
+  }
+}
 
 
 
   function renderVertex() {
     const verticesComponents = vertices.map((vertex, index) => (
-      <G
-        key={index}
-        onStartShouldSetResponder={() => true}
-        onResponderMove={(event) => {
-          const { locationX, locationY } = event.nativeEvent;
-          moveVertexAndEdge(index, locationX, locationY);
-        }}>
+        <G
+          key={index}
+          onPress={() => {if (isAddEdge) handleAddEdge(index+1);}}
+          onStartShouldSetResponder={() => true}
+          onResponderMove={(event) => {
+            const { locationX, locationY } = event.nativeEvent;
+            moveVertexAndEdge(index, locationX, locationY);
+          }}>
 
-        <Circle
-          cx={vertex.x}
-          cy={vertex.y}
-          r={vertex.size}
-          stroke="black"
-          strokeWidth={2}
-          fill={vertex.color}
-        />
-        <SvgText
-          key={`text_${vertex.id}`}
-          x={vertex.x}
-          y={vertex.y}
-          fill="black"
-          fontSize="15"
-          textAnchor="middle"
-          dy=".3em" // Điều chỉnh vị trí dọc của văn bản
-        >
-          {vertex.label}
-        </SvgText>
-      </G>
+          <Circle
+            cx={vertex.x}
+            cy={vertex.y}
+            r={vertex.size}
+            stroke={theme['vertexStroke']}
+            strokeWidth={2}
+            fill={vertex.color}
+          />
+          <SvgText
+            fontFamily='Montserrat-Black'
+            key={`text_${vertex.id}`}
+            x={vertex.x}
+            y={vertex.y}
+            fill={theme['numberStroke']}
+            fontSize="20"
+            textAnchor="middle"
+            dy=".3em" // Điều chỉnh vị trí dọc của văn bản
+          >
+            {vertex.label}
+          </SvgText>
+        </G>
+      
     ))
 
     return verticesComponents;
@@ -97,8 +141,8 @@ function RenderGraph(props) {
           y1={y1}
           x2={x2}
           y2={y2}
-          stroke="black"
-          strokeWidth="1"
+          stroke={theme['stroke']}
+          strokeWidth="2"
         />
       )
 
@@ -110,8 +154,9 @@ function RenderGraph(props) {
             <Path
               key={i + "curve" + index}
               d={`M ${x1} ${y1} Q ${midX} ${midY - 10 * i} ${x2} ${y2}`}
-              stroke="black"
+              stroke={theme['stroke']}
               fill="none"
+              strokeWidth="2"
             />
           );
         }
@@ -133,7 +178,7 @@ function RenderGraph(props) {
         cx={edge.beginVertex.x - 20}
         cy={edge.beginVertex.y - 20}
         r="16"
-        stroke="black"
+        stroke={theme['stroke']}
         strokeWidth="1"
         fill="none"
       />
@@ -168,7 +213,8 @@ function RenderGraph(props) {
       key = {`arrow${startVertex.id}${endVertex.id}${id} `}
       d={`M${x4},${y4} L${x3},${y3} L${x5},${y5} `}
       fill="none"
-      stroke="black"
+      stroke={theme['stroke']}
+      strokeWidth="2"
     />
   }
 
@@ -218,8 +264,9 @@ function RenderGraph(props) {
       <Path
         key={`arrowLoop${index}`}
         d={`M${x4},${y4} L${x3},${y3} L${x5},${y5}`}
-        stroke="black"
+        stroke={theme['stroke']}
         fill="none"
+        strokeWidth="2"
       />
     );
   }
@@ -275,8 +322,8 @@ function RenderGraph(props) {
           y1={y1}
           x2={x2}
           y2={y2}
-          stroke="black"
-          strokeWidth="1"
+          stroke={theme['stroke']}
+          strokeWidth="2"
         />
 
       )
@@ -290,8 +337,9 @@ function RenderGraph(props) {
             <Path
               key={i + "curve" + index}
               d={`M ${x1} ${y1} Q ${midX} ${midY + 30 * ((-1)**i)} ${x2} ${y2}`}
-              stroke="black"
+              stroke={theme['stroke']}
               fill="none"
+              strokeWidth="2"
             />
           );
         }
@@ -303,6 +351,36 @@ function RenderGraph(props) {
     return edgesComponents;
   }
 
+  const renderWeight = () => {
+    const weightComponents = edges.flatMap((edge, index) => {
+      let x1 = edge.beginVertex.x, x2 = edge.endVertex.x;
+      let y1 = edge.beginVertex.y, y2 = edge.endVertex.y;
+      let midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
+
+      
+      let a = x2 - x1, b = y2- y1;
+      let distance = Math.sqrt(a*a + b*b);
+
+      let xValue = midX + 12 * b / distance;
+      let yValue = midY + 12 * a / distance;
+      return (
+        <SvgText
+          key={index}
+          x={xValue}
+          y={yValue}
+          fill={theme['numberStroke']}
+          fontSize="20"
+          textAnchor="middle"
+          dy=".3em"
+        >
+          {edge.weight}
+        </SvgText>
+      )
+    })
+    return weightComponents;
+  }
+
+
 
   function renderDirectedGraph() {
     return <Svg width='100%' height='100%' >
@@ -310,15 +388,18 @@ function RenderGraph(props) {
       {renderLoop()}
       {renderArrow()}
       {renderVertex()}
+      {showWeight && renderWeight()}
     </Svg>
   }
 
 
   function renderUndirectedGraph() {
     return <Svg width='100%' height='100%' > 
+
       {renderUndirectedEdge()}
       {renderLoop()}
       {renderVertex()}
+      {showWeight && renderWeight()}
     </Svg>
   }
 
