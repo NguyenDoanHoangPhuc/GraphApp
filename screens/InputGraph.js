@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Text,
     View,
@@ -7,462 +7,573 @@ import {
     TouchableOpacity,
     Button,
     ScrollView,
-    Pressable
+    Pressable,
+    Modal,
 } from 'react-native'
 import Swiper from 'react-native-swiper';
 import { StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import image from '../constants/image';
+import color from '../constants/color';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+
+import Animated, { ReduceMotion, cancelAnimation, useAnimatedStyle, useSharedValue,Easing, withDelay, withSpring, withTiming } from "react-native-reanimated"
 
 
-
-
-/*
-    A1, B1 la nut cap 1
-    A2, B2 la nut cap 2, con cua A1
-    C2, D2 la nut cap 2, con cua B1
-
-    A3, B3, C3 
-*/
-
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 
 
 function InputGraph({ navigation }) {
-    const [showsButtons, setShowButtons] = useState({ A1: false, B1: false });
-    const [showMoreButtons, setShowMoreButtons] = useState({ A2: false, B2: false, C2: false, D2: false })
-    const [isDisabled, setIsDisabled] = useState({
-        A1: false,
-        B1: false,
-        A2: true,
-        B2: true,
-        C2: true,
-        D2: true
-    })
-    const [isSelected, setIsSelected] = useState({
-        A1: false,
-        B1: false,
-        A2: false,
-        B2: false,
-        C2: false,
-        D2: false,
-        A3: false,
-        B3: false,
-        C3: false
-    })
 
+    const [showModal, setShowModal] = useState(false);
+    const [showButton1, setShowButton1] = useState(false);
+    const [showButton2, setShowButton2] = useState(false);
 
-    const child = {
-        A1: ['A2', 'B2'],
-        B1: ['C2', 'D2'],
-        A2: ['A3', 'B3', 'C3'],
-        B2: ['A3', 'B3', 'C3'],
-        C2: ['A3', 'B3', 'C3'],
-        D2: ['A3', 'B3', 'C3']
-    }
+    const [showWeight, setShowWeight] = useState(false);
 
-    const parent = {
-        A1: null,
-        B1: null,
-        A2: 'A1',
-        B2: 'A1',
-        C2: 'B1',
-        D2: 'B1'
-    }
+    const handleModalClose = useCallback(() => {
+        setShowModal(false);
+    }, []);
 
+    const handleModalOpen = useCallback(() => {
+        setShowModal(true);
+    }, []);
 
-    const [typeOfInput, setTypeOfInput] = useState('empty');
     const [typeOfGraph, setTypeOfGraph] = useState('empty');
 
-
-    const handleSelected = (name) => {
-        setIsSelected(prevState => ({ ...prevState, [name]: !prevState[name] }));
-        if (Array.isArray(child[name])) {
-            child[name].forEach((item) => {
-                setIsSelected(prevState => ({ ...prevState, [item]: false }));
-            })
-        }
-    }
-
-    const handleIsSelectedSibling = (name) => {
-        setIsSelected(prevState => ({ ...prevState, [name]: !prevState[name] }));
-        ["A3", "B3", "C3"].filter(e => e !== name).forEach(item => {
-            setIsSelected(prevState => ({...prevState, [item]: false}));
-        })
-    }
-
-    function handleShowButtons(name) {
-        setShowButtons(prevState => ({ ...prevState, [name]: !prevState[name] }));
-        if (Array.isArray(child[name])) {
-            child[name].forEach((item) => {
-                setShowMoreButtons(prevState => ({ ...prevState, [item]: false }));
-            })
-        }
-    }
-
-    const handleShowMoreButtons = (name) => {
-        setShowMoreButtons(prevState => ({ ...prevState, [name]: !prevState[name] }));
-    };
-
-    function handleOnlyEnable(name) {
-        setIsDisabled(prevState => {
-
-            const newState = Object.keys(prevState).reduce((state, key) => {
-                state[key] = true;
-                return state;
-            }, {});
-
-            newState[name] = false;
-
-            return newState;
-        });
-    }
-
-    function handleDisabledButtons(name) {
-        if (!isSelected[name]) {
-            handleOnlyEnable(name);
-
-            if (Array.isArray(child[name])) {
-                child[name].forEach((item) => {
-                    setIsDisabled(prevState => ({ ...prevState, [item]: !prevState[item] }));
-                });
-            }
-
-            if (parent[name] != null) setIsDisabled(prevState => ({ ...prevState, [parent[name]]: !prevState[parent[name]] }));
-        }
-        else {
-            Object.keys(parent).forEach((item) => {
-                if (parent[name] === parent[item]) {
-                    setIsDisabled(prevState => ({ ...prevState, [item]: false }));
-                }
-            });
-        }
-    }
+ 
+    
 
     function handleTypeOfInput(input) {
-        if (typeOfInput !== input) setTypeOfInput(input);
-        else setTypeOfInput('empty');
+        setTypeOfInput(input);
+        
     }
 
     function handleTypeOfGraph(graph) {
-        if (typeOfGraph !== graph) setTypeOfGraph(graph);
-        else setTypeOfGraph('empty');
+        setTypeOfGraph(graph);
+    }
+  
+
+    const handleShowWeightGraph = () => {
+        setShowWeight(!showWeight);
     }
 
+    // ANIMATION
+
+    const offset1 = useSharedValue(0);
+    const offset2 = useSharedValue(0);
+    const offset3 = useSharedValue(0);
+
+    const offset4 = useSharedValue(0);
+    const offset5 = useSharedValue(0);
+    const offset6 = useSharedValue(0);
+
+    const opacity = useSharedValue(0);
+
+    const opacity1 = useSharedValue(0);
+
+    const animated1 = useAnimatedStyle(() => ({
+        transform: [{translateY: offset1.value}],
+        opacity: opacity.value
+    }))
+
+    const animated2 = useAnimatedStyle(() => ({
+        transform: [{translateY: offset2.value}],
+        opacity: opacity.value
+    }))
+    
+    const animated3 = useAnimatedStyle(() => ({
+        transform: [{translateY: offset3.value}],
+        opacity: opacity.value
+    }))
+
+
+    const animated4 = useAnimatedStyle(() => ({
+        transform: [{translateY: offset4.value}],
+        opacity: opacity1.value
+    }))
+
+    const animated5 = useAnimatedStyle(() => ({
+        transform: [{translateY: offset5.value}],
+        opacity: opacity1.value
+    }))
+    
+    const animated6 = useAnimatedStyle(() => ({
+        transform: [{translateY: offset6.value}],
+        opacity: opacity1.value
+    }))
+
+    const handlePress1 = () => {
+        
+        if (showButton2) handlePress2();
+        setShowButton1(!showButton1);
+      
+        
+        offset1.value = withSpring(showButton1 ? 0 : 5)
+        offset2.value = withDelay(100, withSpring(showButton1 ? 0 : 5))
+        offset3.value = withDelay(200, withSpring(showButton1 ? 0 : 5))
+
+        opacity.value = withTiming(showButton1 ? 0 : 1, {duration: 400})
+    }
+
+    const handlePress2 = () => {
+        
+        if (showButton1) handlePress1();
+        setShowButton2(!showButton2);
+        
+        
+        offset4.value = withSpring(showButton2 ? 0 : 5)
+        offset5.value = withDelay(100, withSpring(showButton2 ? 0 : 5))
+        offset6.value = withDelay(200, withSpring(showButton2 ? 0 : 5))
+
+        opacity1.value = withTiming(showButton2 ? 0 : 1, {duration: 400})
+    }
+
+    const offsetX = useSharedValue(-200);
+    const opacity3 = useSharedValue(0);
+
+    const offsetX1 = useSharedValue(-200);
+
+    const animatedX = useAnimatedStyle(() => {
+        return {
+            transform: [{translateX: offsetX.value}],
+            opacity: opacity3.value
+        }
+    })
+
+    const animatedX1 = useAnimatedStyle(() => {
+        return {
+            transform: [{translateX: offsetX1.value}],
+            opacity: opacity3.value
+        }
+    })
+
+    useEffect(() => {
+        offsetX.value = withTiming(0, {
+            duration: 500,
+            easing: Easing.inOut(Easing.quad),
+            reduceMotion: ReduceMotion.System
+        })
+
+        offsetX1.value = withDelay(20, withTiming(0, {
+            duration: 500,
+            easing: Easing.inOut(Easing.quad),
+            reduceMotion: ReduceMotion.System
+        }))
+
+        opacity3.value = withTiming(1, {
+            duration: 600,
+            easing: Easing.inOut(Easing.quad),
+            reduceMotion: ReduceMotion.System
+        });
+    }, [])
+
+
+
     return (
-        <ScrollView>
-            <Pressable
-                style={({ pressed }) => [
-                    styles.button,
-                    styles.button1,
-                    pressed && { opacity: 0.8},
-                    isSelected.A1 && {borderWidth: 2},
-                    isDisabled.A1 && styles.buttonDisable
-                ]}
-                onPress={() => {
-                    handleShowButtons("A1");
-                    handleDisabledButtons("A1");
-                    handleSelected("A1");
-                    handleTypeOfInput("random");
-                    setTypeOfGraph("empty");
+        <View style={styles.container}>
+            <Modal
+                animationType='fade'
+                visible={showModal}
+                transparent={true}
+                onRequestClose={() => {
+                    setShowModal(false);
                 }}
-                disabled={isDisabled.A1}
             >
-                <Text style={[styles.buttonText, isDisabled.A1 && {color: "#A9A9A9"}]}>Khởi tạo ngẫu nhiên</Text>
-            </Pressable>
-            {showsButtons.A1 && (
-                <View>
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.button,
-                            styles.button2,
-                            pressed && { backgroundColor: "gray" },
-                            isSelected.A2 && {borderWidth: 2},
-                            isDisabled.A2 && styles.buttonDisable
-                        ]}
-                        onPress={() => {
-                            handleShowMoreButtons("A2");
-                            handleDisabledButtons("A2");
-                            handleSelected("A2");
-                            setTypeOfGraph("empty");
-                        }}
-                        disabled={isDisabled.A2}
+                <View
+                    style={styles.overlayModal}
+                >
+                    <View
+                        style={styles.modalContent}
                     >
-                        <Text style={[styles.buttonText, isDisabled.A2 && {color: "#A9A9A9"}]}>Vô hướng</Text>
+                        <View style={styles.modalText}>
+                            <Pressable
+                                style={({ pressed }) => [pressed && { opacity: 0.8 }]}
+                                onPress={() => handleModalClose()}
+                            >
+                                <View style={styles.modalCloseButton}>
+                                    <FontAwesomeIcon icon="fa-xmark" size={26} color={color.modalPrimary} />
+                                </View>
 
-                    </Pressable>
-                    {
-                        showMoreButtons.A2 && (
-                            <View>
-                                <Pressable
-                                    style={[styles.button, styles.button3,
-                                        isSelected.A3 && {borderWidth: 2}
-                                    ]}
-                                    onPress={() => {
-                                        handleIsSelectedSibling("A3")
-                                        handleTypeOfGraph("UndirectedSimpleGraph")}
-                                    }
-                                        >
-                                    <Text style={styles.buttonText}>Đơn đồ thị vô hướng</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={[styles.button, styles.button3,
-                                        isSelected.B3 && {borderWidth: 2}
-                                    ]}
-                                    onPress={() => {
-                                        handleIsSelectedSibling("B3")
-                                        handleTypeOfGraph("UndirectedMultiGraph")}
-                                    }
-                                        >
-                                    <Text style={styles.buttonText}>Đa đồ thị vô hướng</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={[styles.button, styles.button3,
-                                        isSelected.C3 && {borderWidth: 2}
-                                    ]}
-                                    onPress={() => {
-                                        handleIsSelectedSibling("C3")
-                                        handleTypeOfGraph("PseudoGraph")}
-                                    }
-                                        >
-                                    <Text style={styles.buttonText}>Giả đồ thị</Text>
-                                </Pressable>
-                            </View>
-                        )
-                    }
-                    <Pressable
-                        onPress={() => {
-                            handleShowMoreButtons("B2");
-                            handleDisabledButtons("B2");
-                            handleSelected("B2");
-                            setTypeOfGraph("empty");
-                        }}
-                        style={({ pressed }) => [
-                            styles.button,
-                            styles.button2,
-                            isSelected.B2 && {borderWidth: 2},
-                            pressed && { backgroundColor: "gray" },
-                            isDisabled.B2 && styles.buttonDisable
-                        ]}
-                        disabled={isDisabled.B2}
-                    >
-                        <Text style={[styles.buttonText, isDisabled.B2 && {color: "#A9A9A9"}]}>Có hướng</Text>
-                    </Pressable>
-                    {
-                        showMoreButtons.B2 && (
-                            <View>
-                                <Pressable
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.A3 && {borderWidth: 2}
-                                    ]}
-                                    onPress={() => {
-                                        handleIsSelectedSibling("A3");   
-                                        handleTypeOfGraph("DirectedSimpleGraph")}
-                                    }
-                                        >
-                                    <Text style={styles.buttonText}>Đơn đồ thị có hướng</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.B3 && {borderWidth: 2}
-                                    ]}
-                                    onPress={() => {
-                                        handleIsSelectedSibling("B3");   
-                                        handleTypeOfGraph("DirectedMultiNoLoopGraph")}
-                                    }
-                                        >
-                                    <Text style={styles.buttonText}>Đa đồ thị có hướng không khuyên</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.C3 && {borderWidth: 2}
-                                    ]}
-                                    onPress={() => {
-                                        handleIsSelectedSibling("C3");   
-                                        handleTypeOfGraph("DirectedMultiLoopGraph")}
-                                    }
-                                        >
-                                    <Text style={styles.buttonText}>Đa đồ thị có hướng có khuyên</Text>
-                                </Pressable>
-                            </View>
-                        )
-                    }
-                </View>
-            )}
-            <Pressable
-                onPress={() => {
-                    handleShowButtons("B1");
-                    handleDisabledButtons("B1");
-                    handleSelected("B1");
-                    handleTypeOfInput("create");
-                    setTypeOfGraph("empty");
-                }}
-                style={({ pressed }) => [
-                    styles.button,
-                    styles.button1,
-                    pressed && { opacity: 0.9 },
-                    isSelected.B1 && {borderWidth: 2},
-                    isSelected.B1 && {borderWidth: 2},
-                    isDisabled.B1 && styles.buttonDisable
-                ]}
-                disabled={isDisabled.B1}
-            >
-                <Text style={[styles.buttonText, isDisabled.B1 && {color: "#A9A9A9"}]}>Tự khởi tạo</Text>
-            </Pressable>
-            {showsButtons.B1 && (
-                <View>
-                    <Pressable
-                        onPress={() => {
-                            handleShowMoreButtons("C2");
-                            handleDisabledButtons("C2");
-                            handleSelected("C2");
-                            setTypeOfGraph("empty");
-                        }}
-                        style={
-                            ({ pressed }) => [
-                                styles.button,
-                                styles.button2,
-                                pressed && { backgroundColor: "gray" },
-                                isSelected.C2 && {borderWidth: 2},
-                                isDisabled.C2 && styles.buttonDisable
-                            ]}
-                        disabled={isDisabled.C2}
-                    >
-                        <Text style={[styles.buttonText, isDisabled.C2 && {color: "#A9A9A9"}]}>Vô hướng</Text>
-                    </Pressable>
-                    {
-                        showMoreButtons.C2 && (
-                            <View>
-                                <Pressable
-                                    onPress={() => {
-                                        handleIsSelectedSibling("A3")    
-                                        handleTypeOfGraph("UndirectedSimpleGraph")}
-                                    }
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.A3 && {borderWidth: 2}
-                                    ]}
-                                >
-                                    <Text style={styles.buttonText}>Đơn đồ thị vô hướng</Text>
-                                </Pressable>
-                                <Pressable
-                                    onPress={() => {
-                                        handleIsSelectedSibling("B3")    
-                                        handleTypeOfGraph("UndirectedMultiGraph")}
-                                    }
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.B3 && {borderWidth: 2}
-                                    ]}
-                                >
-                                    <Text style={styles.buttonText}>Đa đồ thị vô hướng</Text>
-                                </Pressable>
-                                <Pressable
-                                    onPress={() => {
-                                        handleIsSelectedSibling("C3")    
-                                        handleTypeOfGraph("PseudoGraph")}
-                                    }
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.C3 && {borderWidth: 2}
-                                    ]}
-                                >
-                                    <Text style={styles.buttonText}>Gỉa đồ thị</Text>
-                                </Pressable>
-                            </View>
-                        )
-                    }
-                    <Pressable
-                        onPress={() => {
-                            handleShowMoreButtons("D2");
-                            handleDisabledButtons("D2");
-                            handleSelected("D2");
-                            setTypeOfGraph("empty");
-                        }}
-                        style={({ pressed }) => [
-                            styles.button,
-                            styles.button2,
-                            isSelected.D2 && {borderWidth: 2},
-                            pressed && { backgroundColor: "gray" },
-                            isDisabled.D2 && styles.buttonDisable
-                        ]}
-                        disabled={isDisabled.D2}
-                    >
-                        <Text style={[styles.buttonText, isDisabled.D2 && {color: "#A9A9A9"}]}>Có hướng</Text>
-                    </Pressable>
-                    {
-                        showMoreButtons.D2 && (
-                            <View>
-                                <Pressable
-                                    onPress={() => {
-                                        handleIsSelectedSibling("A3");
-                                        handleTypeOfGraph("DirectedSimpleGraph")}
-                                    }
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.A3 && {borderWidth: 2}
-                                    ]}
-                                >
-                                    <Text style={styles.buttonText}>Đơn đồ thị có hướng</Text>
-                                </Pressable>
-                                <Pressable
-                                    onPress={() => {
-                                        handleIsSelectedSibling("B3");
-                                        handleTypeOfGraph("DirectedMultiNoLoopGraph")}
-                                    }
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.B3 && {borderWidth: 2}
-                                    ]}
-                                >
-                                    <Text style={styles.buttonText}>Đa đồ thị có hướng không khuyên</Text>
-                                </Pressable>
-                                <Pressable
-                                    onPress={() => {
-                                        handleIsSelectedSibling("C3");
-                                        handleTypeOfGraph("DirectedMultiLoopGraph")}
-                                    }
-                                    style={[styles.button, styles.button3
-                                        ,isSelected.C3 && {borderWidth: 2}
-                                    ]}    
+                            </Pressable>
+
+                            <Text style={styles.modalTitle}>
+                                Cách khởi tạo
+                            </Text>
+                            <Text style={styles.modalDescription}>
+                                Chọn cách bạn muốn khởi tạo đồ thị
+                            </Text>
+                        </View>
+
+                        <Pressable 
+                            style ={styles.checkBoxButton}
+                            onPress={() => handleShowWeightGraph()}
+                        >
+                            <View style={[styles.checkBoxIcon, {backgroundColor: showWeight === false ? 'white' : color.greenButton}]}>
+                                <FontAwesomeIcon icon="fa-check" size={20} color='black' />
                                 
-                                >
-                                    <Text style={styles.buttonText}>Đa đồ thị có hướng có khuyên</Text>
-                                </Pressable>
                             </View>
-                        )
-                    }
-                </View>
-            )}
+                            <Text style ={[styles.checkBoxText, {color: showWeight === false ? 'white' : color.greenButton}]}>Đồ thị có trọng số</Text>
+                        </Pressable>
 
-            <Pressable
-                disabled={typeOfGraph === 'empty' || typeOfInput === 'empty'}
-                onPress={() => navigation.navigate('DrawGraph', {
-                    typeOfGraph: typeOfGraph,
-                    typeOfInput: typeOfInput
-                })}
-                style={({pressed}) => [
-                    styles.button,
-                    styles.buttonSelect,
-                    pressed && {opacity: 0.9},
-                    (typeOfGraph === 'empty' || typeOfInput === 'empty') && styles.buttonDisable
-                ]}
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.modalButton,
+                                pressed && { opacity: 0.8 },
+
+                            ]}
+                            onPress={() => {
+                                handleModalClose();
+                                navigation.navigate('DrawGraph', { typeOfGraph: typeOfGraph, typeOfInput: 'random', showWeight: showWeight })
+                            }}
+
+                        >
+                            <View style={styles.modalImage}>
+                                <FontAwesomeIcon icon="fa-dice" size={40} color='black' />
+                            </View>
+                            <View style={styles.modalButtonText}>
+
+                                <Text style={styles.modalButtonTitle}>
+                                   Ngẫu nhiên
+                                </Text>
+                                <Text style={styles.modalButtonDescription}>
+                                    Khởi tạo ngẫu nhiên với số đỉnh và cung 
+                                </Text>
+                            </View>
+                            
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => {
+                                handleModalClose();
+                                navigation.navigate('DrawGraph', { typeOfGraph: typeOfGraph, typeOfInput: 'create', showWeight: showWeight})
+                            }}
+                            style={({ pressed }) => [
+                                styles.modalButton,
+                                pressed && { opacity: 0.9 },
+
+                            ]}
+
+                        >
+
+                            <View style={styles.modalImage}>
+                                <FontAwesomeIcon icon="fa-paintbrush" size={40} color='black' />
+                            </View>
+                            <View style={styles.modalButtonText}>
+
+                                <Text style={styles.modalButtonTitle}>
+                                    Tự khởi tạo
+                                </Text>
+                                <Text style={styles.modalButtonDescription}>
+                                    Tự thêm đỉnh và cung để tạo đồ thị
+                                </Text>
+                            </View>
+                        </Pressable>
+                        
+                    </View>
+
+                </View>
+            </Modal>
+
+
+            <View
+                style={styles.headerLayout}
             >
-                <Text style={[styles.buttonText, (typeOfGraph === 'empty' || typeOfInput === 'empty') && {color: "#A9A9A9"}]}>Chọn</Text>
-            </Pressable>
-        </ScrollView>
+                <Pressable style={{
+                    position: 'absolute',
+                    top: 20,
+                    left: 20,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 40,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 2
+                }} onPress={() => navigation.goBack()}>
+                    <FontAwesomeIcon icon="fa-solid fa-arrow-left" size={24} color="white" />
+                </Pressable>
+                <ImageBackground
+                    style={styles.headerBackground}
+                    source={image.inputBackground}
+                >
+                    <View style={styles.overlay}>
+                        <Image
+                            style={styles.logo}
+                            source={image.whiteLogo} />
+                        <Text style={styles.headerText}>Hãy chọn</Text>
+                        <Text style={styles.headerHighlightText}>loại đồ thị</Text>
+                    </View>
+                </ImageBackground>
+            </View>
+
+            <ScrollView style={styles.buttonLayout}>
+
+                <View
+                    
+                >
+                    <View >
+                        <AnimatedPressable
+                            style={[
+                                styles.bigButton,
+                                styles.blueButton,
+                                animatedX
+                            ]}
+                            onPress={handlePress1}
+
+                        >
+                            <View style = {styles.bigButtonImage}>
+                                <Image
+                                    style = {{
+                                        height: 60,
+                                        width: 60,
+                                    }}
+                                    source = {image.undiLogo}
+                                />
+                            </View>
+                            <View style ={styles.bigButtonText}>
+                                <Text style = {styles.bigButtonTitle}>Vô hướng</Text>
+                                <Text style = {styles.bigButtonDescription}>Mỗi cạnh là một quan hệ hai chiều</Text>
+                            </View>
+
+                        </AnimatedPressable>
+                        {
+                            showButton1 && (
+                                <View>
+                                    <AnimatedPressable
+                                        style={[styles.mediumButton, styles.darkBlueButton,
+                                            animated1
+                                        ]}
+                                        onPress={() => {
+                                            handleTypeOfGraph("UndirectedSimpleGraph")
+                                            handleModalOpen();
+                                        }}
+                                    >
+                                        <Text style={styles.mediumButtonText}>Đơn đồ thị vô hướng</Text>
+                                    </AnimatedPressable>
+
+
+                                    <AnimatedPressable
+                                        style={ [styles.mediumButton, styles.darkBlueButton,
+                                            animated2
+                                        ]}
+                                        onPress={() => {
+                                            handleTypeOfGraph("UndirectedMultiGraph")
+                                            handleModalOpen();
+                                        }
+                                        }
+                                    >
+                                        <Text style={styles.mediumButtonText}>Đa đồ thị vô hướng</Text>
+                                    </AnimatedPressable>
+                                    <AnimatedPressable
+                                        style={[styles.mediumButton, styles.darkBlueButton,
+                                            animated3
+                                            
+                                        ]}
+                                        onPress={() => {
+                                            handleModalOpen();
+                                            handleTypeOfGraph("PseudoGraph")
+                                        }
+                                        }
+                                    >
+                                        <Text style={styles.mediumButtonText}>Giả đồ thị</Text>
+                                    </AnimatedPressable>
+                                </View>
+                            )
+                        }
+                        <AnimatedPressable
+                            style={[
+                                styles.bigButton,
+                                styles.cyanButton,
+                                animatedX1
+                            ]}
+                            onPress={handlePress2}
+                        >
+                            <View style={styles.bigButtonImage}>
+                            <Image
+                                    style = {{
+                                        height: 60,
+                                        width: 60,
+                                    }}
+                                    source = {image.diLogo}
+                                />
+                            </View>
+                            <View style ={styles.bigButtonText}>
+                                <Text style={styles.bigButtonTitle}>Có hướng</Text>
+                                <Text style={styles.bigButtonDescription}>Mỗi cạnh là một quan hệ một chiều</Text>
+                            </View>
+                        </AnimatedPressable>
+                        {
+                            showButton2 && (
+                                <View>
+                                    <AnimatedPressable
+                                        style={[styles.mediumButton, styles.darkCyanButton
+                                            ,animated4
+                                        ]}
+                                        onPress={() => {
+                                            handleModalOpen();
+                                            handleTypeOfGraph("DirectedSimpleGraph")
+                                        }
+                                        }
+                                    >
+                                        <Text style={styles.mediumButtonText}>Đơn đồ thị có hướng</Text>
+                                    </AnimatedPressable>
+                                    <AnimatedPressable
+                                        style={[styles.mediumButton, styles.darkCyanButton
+                                            ,animated5
+                                        ]}
+                                        onPress={() => {
+                                            handleModalOpen();
+                                            handleTypeOfGraph("DirectedMultiNoLoopGraph")
+                                        }
+                                        }
+                                    >
+                                        <Text style={styles.mediumButtonText}>Đa đồ thị có hướng (không khuyên)</Text>
+                                    </AnimatedPressable>
+                                    <AnimatedPressable
+                                        style={[styles.mediumButton, styles.darkCyanButton
+                                            , animated6
+                                        ]}
+                                        onPress={() => {
+                                            handleModalOpen();
+                                            handleTypeOfGraph("DirectedMultiLoopGraph")
+                                        }
+                                        }
+                                    >
+                                        <Text style={styles.mediumButtonText}>Đa đồ thị có hướng (có khuyên)</Text>
+                                    </AnimatedPressable>
+                                </View>
+                            )
+                        }
+                    </View>
+                </View>
+            </ScrollView>
+
+
+
+        </View>
+
     );
 }
 
 const styles = StyleSheet.create({
-    buttonDisable: {
-        backgroundColor: "#C9D7DD",
+    container: {
+        flex: 1,
+        backgroundColor: color.primaryBackground
     },
-    button1: {
-        backgroundColor: "#38419D"
+    headerLayout: {
+        
+        height: '20%',
+        borderBottomRightRadius: 100,
+        overflow: 'hidden'
     },
-    button2: {
-        backgroundColor: "#3887BE"
+    buttonLayout: {
+        height: '80%',
+        
     },
-    button3: {
-        backgroundColor: "#59B4C3"
+    headerBackground: {
+        flex: 1,
     },
-    buttonSelect: {
-        backgroundColor: "#365486"
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 39, 0.4)',
+        padding: 20,
+        justifyContent: 'flex-end'
+    },
+    logo: {
+        width: 40,
+        height: 40,
+
+        position: 'absolute',
+        top: 20,
+        right: 20
+    },
+    headerText: {
+        fontSize: 24,
+        fontFamily: 'Montserrat-Regular',
+
+        color: 'white'
+    },
+    headerHighlightText: {
+        fontSize: 26,
+        fontFamily: 'Montserrat-Black',
+        textTransform: 'uppercase',
+        color: 'white'
+    },
+
+
+    // Button big
+    bigButton: {
+        width: '90%',
+        height: 'auto',
+        padding: 16,
+        borderRadius: 20,
+
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'center',
+        marginTop: 18
+    },
+
+    cyanButton: {
+        backgroundColor: color.cyanButton
+    },
+
+    blueButton: {
+        backgroundColor: color.blueButton
+    },
+
+
+    bigButtonImage: {
+        width: `30%`,
+        aspectRatio: 1.5,
+        borderRadius: 10,
+        marginRight: 20,
+
+        backgroundColor: color.yellowButton,
+        paddingTop: 6,
+        alignItems: 'center'
+    },
+
+    bigButtonText: {
+        width: '50%'
+    },
+    bigButtonTitle: {
+        fontSize: 18,
+        fontFamily: 'Montserrat-Black',
+        color: 'white',
+    },
+    bigButtonDescription: {
+        fontSize: 14,
+        fontFamily: 'Poppins-Regular',
+        color: 'white',
+    },
+
+    // Button medium
+
+    mediumButton: {
+        width: '90%',
+        height: 'auto',
+        padding: 10,
+        borderRadius: 20,
+
+        alignSelf: 'center',
+        marginTop: 6,
+        marginBottom: 6
+    },
+    mediumButtonText: {
+        color: 'white',
+        fontSize: 14,
+        textAlign: 'center',
+        fontFamily: 'Montserrat-Regular'
+    },
+
+    darkBlueButton: {
+        backgroundColor: color.darkBlueButton
+    },
+    darkCyanButton: {
+        backgroundColor: color.darkCyanButton
     },
 
     button: {
@@ -471,10 +582,119 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: "blue"
     },
-    buttonText: {
-        color: 'white',
-        textAlign: 'center',
+    
+    //button:
+    checkBoxButton: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'row',
+
+        padding: 18
     },
+    checkBoxIcon: {
+        height: 30,
+        width: 30,
+        borderRadius: 30,
+        backgroundColor: 'white',
+
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    checkBoxText: {
+        color: 'white',
+        fontFamily: 'Poppins-Regular',
+        marginLeft: 10,
+        fontSize: 16
+    },
+
+    // Modal
+    modal: {
+        flex: 1,
+    },
+    overlayModal: {
+        backgroundColor: 'rgba(0, 0, 39, 0.5)',
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+
+    },
+    modalContent: {
+        width: '90%',
+        height: 'auto',
+        backgroundColor: 'black',
+        padding: 5,
+        borderColor: color.modalPrimary,
+        borderWidth: 1,
+        zIndex: 2,
+    },
+    modalButtonTitle: {
+        fontSize: 16,
+        color: 'white',
+        fontFamily: 'Montserrat-Black',
+    },
+    modalButtonDescription: {
+        fontSize: 12,
+        color: 'white',
+        fontFamily: 'Poppins-Regular',
+    },
+    modalButton: {
+        width: '90%',
+        backgroundColor: '#001E6A',
+        borderRadius: 30,
+
+        alignSelf: 'center',
+        marginVertical: 10,
+        padding: 15,
+
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    modalCloseButton: {
+        padding: 8,
+        zIndex: 3,
+
+        position: 'absolute',
+        top: 10,
+        right: 10,
+
+        margin: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalImage: {
+        width: '26%',
+
+        aspectRatio: 1,
+
+        backgroundColor: 'white',
+        borderRadius: 60,
+        marginRight: 20,
+
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    modalButtonText: {
+        width: '60%'
+    },
+    modalText: {
+        marginVertical: 10
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontFamily: 'Montserrat-Black',
+        color: 'white',
+        marginLeft: '5%',
+        marginVertical: 10
+    },
+    modalDescription: {
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        color: 'white',
+        marginLeft: '5%',
+    }
 })
 
 export default InputGraph;

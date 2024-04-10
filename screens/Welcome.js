@@ -1,99 +1,132 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, ImageBackground, Pressable, Image } from 'react-native';
 import Swiper from 'react-native-swiper';
 
-const image = require('../assets/picture/akhil-lincoln-dSeQCOh_q7o-unsplash.jpg');
+import image from '../constants/image';
+import color from '../constants/color';
+import Animated from 'react-native-reanimated';
+
+
 
 function Welcome({ navigation }) {
     return (
-        <Swiper showsButtons={true}>
-            {/* Màn hình số 1 */}
-            <View style={styles.slide}>
-                <ImageBackground source={image} resizeMode='cover' style={styles.image}>
-                    <View style={
-                        styles.darkScreen
-                    }>
-                        <Text style={styles.header}>Chào mừng</Text>
-                        <Text style={styles.description}>Chào mừng bạn đến với ứng dụng vẽ đồ thị của chúng tôi - một công cụ mạnh mẽ giúp bạn tạo và phân tích đồ thị một cách trực quan và hiệu quả.</Text>
-                        <Text style={styles.description}>Với ứng dụng này, bạn có thể dễ dàng vẽ đồ thị, định nghĩa các đỉnh, cạnh và khám phá các thuật toán đồ thị phức tạp thông qua một giao diện thân thiện và dễ sử dụng.</Text>
+       <View style={styles.container}>
 
+            <View style={styles.imageLayout}>
+
+
+                <ImageBackground
+                    source={image.welcomeBackground}
+                    style={styles.image}
+                    resizeMode='cover'
+                >
+                    <View style= {styles.overlayImage}>
+
+                        <Image
+                            source={image.whiteLogo}
+                            style={styles.logo}
+                        />
+                        <Text style={styles.headerText}>Dễ dàng và</Text>
+                        <Text style={styles.headerText}>Nhanh chóng</Text>
+                        <Text style={styles.headerText}>Học về</Text>
+                        <Text style={styles.highlighText}>Các thuật toán</Text>
+                        <Text style={styles.highlighText}>Đồ thị ! </Text>
                     </View>
                 </ImageBackground>
-
             </View>
+       
 
-            {/* Màn hình số 2 */}
-            <View style={styles.slide}>
-                <ImageBackground source={image} resizeMode='cover' style={styles.image}>
-                    <View style={
-                        styles.darkScreen
-                    }>
-                        <Text style={styles.header}>Hãy bắt đầu</Text>
-                        <Text style={styles.description}>Chúc bạn có những trải nghiệm thú vị và hữu ích với ứng dụng vẽ đồ thị của chúng tôi!</Text>
-                        <TouchableOpacity style={styles.button}
-                            onPress={() => navigation.navigate("InputGraph")}
-                        >
+        <View
+            style={styles.footerLayout}
+        >
 
-                            <Text style={styles.buttonText}>Tới việc vẽ đồ thị</Text>
-                        </TouchableOpacity>
 
-                        
-                    </View>
-                </ImageBackground>
+            <Pressable 
+            onPress = {() => navigation.navigate('InputGraph')}
+            
+            style ={({pressed}) => [styles.navigateButton, pressed && {opacity: 0.8}]}>
+                <Text style= {styles.navigateText}
+                   
+                >Bắt đầu</Text>
+            </Pressable>
 
-            </View>
-        </Swiper>
+        </View>
+       </View>
     );
 }
 
 const styles = StyleSheet.create({
-    slide: {
+    container: {
         flex: 1,
+        backgroundColor: color.primaryBackground,
+    },
+    imageLayout: {
+        width: '100%',
+        height: '80%',
+        overflow: 'hidden',
+        backgroundColor: 'black',
+
+        borderBottomRightRadius: 100,
+       
+        
+    },
+    footerLayout: {
+        flex: 0.2,
+        
     },
     image: {
         flex: 1,
-        justifyContent: 'center',
-
+        borderRadius: 100
     },
-    darkScreen: {
-        backgroundColor: 'rgba(0,0,0,0.3)',
+    overlayImage: {
         flex: 1,
-        justifyContent: 'center'
+        backgroundColor: 'rgba(0, 0, 39, 0.4)',
+
+        justifyContent: 'flex-end',
+        paddingLeft: 30,
+        paddingBottom: 30
     },
-    header: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
-        color: "white",
-        textTransform: 'uppercase'
+
+
+    // Button
+    navigateButton: {
+        width: '60%',
+        height: 50,
+        borderRadius: 30,
+        backgroundColor: color.darkCyanButton,
+
+        justifyContent: 'center',
+        alignItems: 'center',
+        
+        marginLeft: 30,
+        marginTop: 30
     },
-    description: {
-        fontSize: 16,
-        marginTop: 20,
-        marginBottom: 10,
-        marginLeft: 40,
-        marginRight: 40,
-        lineHeight: 32,
-        textAlign: 'justify',
-        color: "white"
+    navigateText: {
+        fontSize: 18,
+        fontFamily: 'Popins-Bold',
+        color: 'white'
     },
-    button: {
-        marginTop: 20,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderWidth: 2,
-        borderColor: 'white',
-        alignSelf: 'center',
-        borderRadius: 5,
-        width: '50%',
-    },
-    buttonText: {
+
+    // Text
+    headerText: {
+        fontSize: 30,
         color: 'white',
-        textAlign: 'center',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: 'Montserrat-Black'
     },
+    highlighText: {
+        color: color.yellowButton,
+        fontSize: 30,
+        fontFamily: 'Montserrat-Black'
+    },
+
+    logo: {
+        width: 60,
+        height: 60,
+        position: 'absolute',
+        top: 20,
+        right: 20
+    }
+
 });
 
 export default Welcome;
