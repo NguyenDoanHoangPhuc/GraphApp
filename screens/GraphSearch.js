@@ -1,25 +1,34 @@
 import React, { useDebugValue } from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, ImageBackground, FlatList, ScrollView, Dimensions} from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, Pressable, ImageBackground, FlatList, ScrollView, Dimensions, Svg} from 'react-native';
 import { ToastAndroid } from 'react-native';
-import Graph, {UndirectedSimpleGraph, UndirectedMultiGraph, PseudoGraph} from '../graph_data/Graph'
-import { DirectedSimpleGraph,  DirectedMultiLoopGraph, DirectedMultiNoLoopGraph} from '../graph_data/Graph';
+import Graph, { UndirectedSimpleGraph, UndirectedMultiGraph, PseudoGraph, Vertex } from '../graph_data/Graph'
+import { DirectedSimpleGraph, DirectedMultiLoopGraph, DirectedMultiNoLoopGraph } from '../graph_data/Graph';
 import { AdjacencyMatrix } from '../graph_data/GraphRepresentation';
 import { useState, useEffect, useRef } from 'react';
 //Algorithm
-import { DFS , BFS, DFSRecursion} from '../graph_data/GraphAlgorithm';
+import { DFS, BFS, DFSRecursion, Dijkstra, Prim} from '../graph_data/GraphAlgorithm';
 
 import RenderGraph from '../graph_render/RenderGraph';
+import color from '../constants/color';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 
+
+
+//Tao lop thuat toan tuong ung
 const classMap = {
     'DFS': DFS,
     'BFS': BFS,
-    'DFS-Recursion': DFSRecursion
+    'DFS-Recursion': DFSRecursion,
+    'Dijkstra': Dijkstra,
+    'Prim': Prim
 }
 
 const className = {
     'DFS': 'Duyệt theo chiều sâu',
     'BFS': 'Duyệt theo chiều rộng',
-    'DFS-Recursion': 'Duyệt theo chiều sâu đệ quy'
+    'DFS-Recursion': 'Duyệt theo chiều sâu đệ quy',
+    'Dijkstra': 'Tìm đường đi ngắn nhất',
+    'Prim': 'Tìm đường đi ngắn nhất nhưng nó là Prim'
 }
 
 
@@ -36,14 +45,14 @@ function createInstance(className, myGraph, typeOfGraph) {
 
 const screenWidth = Dimensions.get('window').width;
 
-function GraphSearch({route, navigation}){
-    const {algorithm, graph, typeOfGraph, beginVertex} = route.params;
-    
+function GraphSearch({ route, navigation }) {
+    const { algorithm, graph, typeOfGraph, beginVertex } = route.params;
+
     const getAlgorithmList = (algorithm) => {
         const a = createInstance(algorithm, graph, typeOfGraph);
-        
+
         return a.execute(beginVertex);
-        
+
     }
 
 
@@ -60,33 +69,44 @@ function GraphSearch({route, navigation}){
     const itemSpacing = 30; // spacing between items (marginHorizontal)
 
 
-    
+    const colorVertexBox = [
+        '#715660',
+        '#846470',
+        '#566071',
+        '#727f96',
+        '#c39f72',
+        '#d5bf95',
+        '#667762',
+        '#879e82'
+    ]
 
     const highlightVertexColor = (changeId) => {
-        let prevState = myGraph.deepCopy();
-        prevState.vertices.forEach(vertex => {
-            if (vertex.id === changeId) {
-                vertex.color = '#BFD8AF';
-            }
-            else vertex.color = 'white';
-        })
-        setGraphKey(prev => prev + 1)
-        setMyGraph(prevState);
+        const newGraph = myGraph.deepCopy();
+        newGraph.vertices[changeId-1] = new Vertex(changeId, newGraph.vertices[changeId-1].x, newGraph.vertices[changeId-1].y, '#F4FFAA');
+
+        setMyGraph(newGraph);
+        setGraphKey(prev => prev + 1);
+    }
+    
+    const resetVertexColor = () => {
+        const newGraph = myGraph.deepCopy();
+        newGraph.vertices.forEach((vertex) => vertex.color = color.vertexColor);
+        setMyGraph(newGraph);
+        setGraphKey(prev => prev + 1);
     }
 
-    
 
     const scrollToIndex = (index) => {
         const position = index * (itemWidth + 2 * itemSpacing) - screenWidth / 2 + itemWidth / 2;
         scrollViewRef.current.scrollTo({ x: position, animated: true });
     }
-    
+
     const handleIsChosenVertex = () => {
-        
+
         let state = Array(list.length).fill(false);
         state[currentVertex] = true;
         setIsChosenVertex(state);
-        
+
     }
 
 
@@ -96,69 +116,204 @@ function GraphSearch({route, navigation}){
         highlightVertexColor(list[currentVertex]);
     }, [currentVertex])
 
-    return <View style = {{flex: 1}}>
-        <Text style = {[styles.headerText, styles.headerLayout]}>{className[algorithm]}</Text>
-        <View style = {styles.graphLayout}>
-            <RenderGraph data = {myGraph} type = {typeOfGraph} key = {graphKey} lock = {true}/>
+    return <View style={styles.container}>
+        <View style = {styles.headerLayout}>
+            <Pressable style={styles.navigateBackButton} onPress={() => navigation.goBack()}>
+                <FontAwesomeIcon icon="fa-solid fa-arrow-left" size={24} color="white" />
+            </Pressable>
+            <Text style={styles.headerText}>{className[algorithm]}</Text>
         </View>
 
-        <View style = {styles.vertexHeaderLayout}>
-            <Text style = {{color: 'black', textAlign: 'center'}}>Thứ tự duyệt đỉnh</Text>
-        </View>
-        <View style = {styles.buttonLayout}>
-            <View style={[styles.vertexLayout, styles.centeredVertical]}>
-            <ScrollView
-                horizontal = {true}
-                showsHorizontalScrollIndicator = {false}
-                ref = {scrollViewRef}
-            >
-                {list.map((element, index) => 
-                    <View key = {index} style={[styles.vertexBox,
-                        isChosenVertex[index] && styles.chosenVertexBox
-                    ]}>
-                        <Text
-                            style = {styles.vertexBoxText}
-                        >{element}</Text>
+        
+        <View style={styles.graphLayout}>
+                <View style = {styles.graphContent}>
+
+                    <View style={styles.graphHeader}>
+                        <View style={[styles.graphCircle, {backgroundColor: '#7D0319'}]}></View>
+                        <View style={[styles.graphCircle, {backgroundColor: '#A37701'}]}></View>
+                        <View style={[styles.graphCircle, {backgroundColor: '#027808'}]}></View>
                     </View>
-                )}
+                    <View style={styles.graphFrame}>
+                        
+                            {(myGraph !== null) && <RenderGraph data={myGraph} type={typeOfGraph} key={graphKey}/>}
+                        
 
-            </ScrollView>
+                    </View>
+                </View>
+            </View>
+
+        <View style={styles.vertexHeaderLayout}>
+            <Text style={styles.vertexHeader}>Thứ tự duyệt đỉnh</Text>
+        </View>
+        <View style={styles.buttonLayout}>
+            <View style={[styles.vertexLayout, styles.centeredVertical]}>
+                <ScrollView
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    ref={scrollViewRef}
+                >
+                    {list.map((element, index) =>
+                        <View key={index} style={[styles.vertexBox,
+                        isChosenVertex[index] && styles.chosenVertexBox,
+                        {backgroundColor: colorVertexBox[index % 8]}
+                        ]}>
+                            <Text
+                                style={styles.vertexBoxText}
+                            >{element}</Text>
+                        </View>
+                    )}
+
+                </ScrollView>
 
             </View>
 
             <View style={styles.centeredVertical}>
 
-            <TouchableOpacity style={styles.button}
-    onPress={() => {
-        setCurrentVertex(prev => {
-            const nextVertex = prev - 1 < 0 ? list.length - 1 : prev - 1;
-            return nextVertex;
-        });
-    }}
->
-    <Text style={styles.buttonText}>BACK</Text>
-</TouchableOpacity>
-<TouchableOpacity style={styles.button}
-    onPress={() => {
-        setCurrentVertex(prev => {
-            const nextVertex = (prev + 1) % list.length;
-            return nextVertex;
-        });
-    }}
->
-    <Text style={styles.buttonText}>NEXT</Text>
-</TouchableOpacity>
+                <Pressable style={[styles.button, styles.backButton]}
+                    onPress={() => {
+                        setCurrentVertex(prev => {
+                            const nextVertex = prev - 1 < 0 ? list.length - 1 : prev - 1;
+                            return nextVertex;
+                        });
+                    }}
+                >
+                    <Text style={styles.buttonText}>BACK</Text>
+                </Pressable>
+                <Pressable style={[styles.button, styles.nextButton]}
+                    onPress={() => {
+                        setCurrentVertex(prev => {
+                            if (prev + 1 > list.length - 1) resetVertexColor();
+                            const nextVertex = (prev + 1) % list.length;
+                            return nextVertex;
+                        });
+                    }}
+                >
+                    <Text style={styles.buttonText}>NEXT</Text>
+                </Pressable>
             </View>
         </View>
     </View>
 }
 
 const styles = StyleSheet.create({
-    centeredView: {
+
+    //Layout
+    container: {
         flex: 1,
+        backgroundColor: color.primaryBackground
+    },
+    headerLayout: {
+        height: '10%',
         justifyContent: 'center',
         alignItems: 'center'
     },
+    graphLayout: {
+        height: '60%',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    vertexHeaderLayout: {
+        height: '5%',
+
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    vertexLayout: {
+        height: '15%',
+
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+       
+    },
+    buttonLayout: {
+        height: '20%'
+    },
+    //Header
+    headerText: {
+        fontSize: 16,
+        color: 'white',
+        textAlign: 'center',
+        fontFamily: 'Montserrat-Black',
+
+        marginTop: 20
+    },
+    //Graph
+    graphContent: {
+        borderRadius: 20,
+        width: '94%',
+        borderWidth: 1,
+        borderColor: color.graphFrameStroke,
+        overflow: 'hidden'
+    },
+    graphHeader: {
+        paddingLeft: 20,
+        height: 30,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: color.graphHeader,
+    },  
+    graphFrame: {
+       
+        aspectRatio: 1,
+    
+        backgroundColor: color.graphContent
+    },
+    graphCircle: {
+        width: 14,
+        aspectRatio: 1,
+        borderRadius: 30,
+
+        marginRight: 8
+    },
+
+    //Button
+    button: {
+        width: '40%',
+        aspectRatio: 3,
+
+        alignItems: 'center',
+        justifyContent: 'center',
+        
+        marginHorizontal: 10,
+        borderRadius: 60
+    },
+
+    nextButton: {
+        backgroundColor: color.blueButton
+    },
+    backButton: {
+        backgroundColor: 'gray'
+    },
+
+    navigateBackButton: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        width: 60,
+        height: 60,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1
+    },
+
+
+    buttonText: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: 'white',
+        fontFamily: 'Montserrat-Black'
+    },
+    //Vertex
+    vertexHeader: {
+        fontSize: 16,
+        fontFamily: 'Poppins-Regular',
+        color: 'white',
+        textAlign: 'center'
+    },
+
     centeredVertical: {
         flex: 0.5,
         display: 'flex',
@@ -166,80 +321,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
-    headerText: {
-        fontSize: 16,
-        color: 'black',
-        textAlign: 'center',
-        fontWeight: 'bold',
-
-        marginTop: 20
-    },
-
-    halfScreen: {
-        flex: 0.5
-    },
-    headerLayout: {
-        flex: 0.05
-    },  
-    graphLayout: {
-        flex: 0.55,
-        
-    },
-    vertexHeaderLayout: {
-        flex: 0.05,
-    },
-    vertexLayout: {
-        flex: 0.2,
-        
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-    },  
-    buttonLayout: {
-        flex: 0.2,
-    },
-
     vertexBox: {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        width: 40,
-        height: 40,
-        borderRadius: 40,
-        backgroundColor: '#ADBC9F',
+        width: 50,
+        height: 50,
+        borderRadius: 60,
+        backgroundColor: '#7092BE',
         marginHorizontal: 30,
-        
+
     },
     vertexBoxText: {
         color: 'white',
-        textAlign: 'center'
+        fontSize: 20,
+        fontFamily: 'Montserrat-Black'
+
     },
 
     chosenVertexBox: {
         borderWidth: 3,
-        borderColor: 'black',
-        width: 48,
-        height: 48,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    button: {
-        width: 100,
-        height: 40,
-        backgroundColor: '#59B4C3',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginHorizontal: 40,
-        borderRadius: 20
-    },
-    buttonText: {
-        fontSize: 16,
-        textAlign: 'center',
-        color: 'white',
+        borderColor: 'white',
         
-    }
+    },
+    
 })
 
 export default GraphSearch;

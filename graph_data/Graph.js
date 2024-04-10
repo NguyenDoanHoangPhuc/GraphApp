@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import Svg, { Circle, Text as SvgText, G, Line } from 'react-native-svg';
+import color from '../constants/color';
 
 
 
@@ -9,7 +10,7 @@ Array.prototype.sample = function(){
     return this[Math.floor(Math.random()*this.length)];
 }
 
-
+const vertexColor = color.graphContent
 
 class Vertex {
     id;
@@ -20,7 +21,7 @@ class Vertex {
     size;
     isActive;
 
-    constructor(id, x, y, color = "white", size = 20, isActive = false) {
+    constructor(id, x, y, color = vertexColor, size = 20, isActive = false) {
         this.id = id
         this.x = x
         this.y = y
@@ -48,12 +49,13 @@ class Edge {
     times;
     weight;
 
-    constructor(beginVertex, endVertex, isLoop = false, times = 1, weight = 0) {
+    constructor(beginVertex, endVertex, weight = 0, times = 1) {
         this.beginVertex = beginVertex;
         this.endVertex = endVertex;
-        this.isLoop = this.beginVertex.id === this.endVertex.id;
-        this.times = times;
+        
         this.weight = weight;
+        this.times = times;
+        this.isLoop = this.beginVertex.id === this.endVertex.id;
     }
 
     
@@ -72,9 +74,12 @@ class Edge {
 
     deepCopy() {
         // Gọi constructor với các bản sao sâu của beginVertex và endVertex
-        return new Edge(this.beginVertex.deepCopy(), this.endVertex.deepCopy(), this.isLoop, this.times, this.weight);
+        return new Edge(this.beginVertex.deepCopy(), this.endVertex.deepCopy(), this.weight, this.times);
     }
     
+    addWeight(weight){
+        this.weight = weight;
+    }
 
 }
 
@@ -159,10 +164,17 @@ class Graph {
 
     //Edges methods
     addEdgeById(beginId, endId) {
-       
         let beginVertex = this.vertices.find((item) => item.id === beginId);
         let endVertex = this.vertices.find((item) => item.id === endId);
         let newEdge = new Edge(beginVertex, endVertex);
+        this.edges.push(newEdge);
+    }
+
+ 
+    addEdgeByIdAndWeight(beginId, endId, weight){
+        let beginVertex = this.vertices.find((item) => item.id === beginId);
+        let endVertex = this.vertices.find((item) => item.id === endId);
+        let newEdge = new Edge(beginVertex, endVertex, weight);
         this.edges.push(newEdge);
     }
 
@@ -173,6 +185,13 @@ class Graph {
 
     addEdgeByEdge(edge){
         this.edges.push(edge);
+    }
+
+    addRandomWeight(maximumWeight){
+        this.edges.map((edge) => {
+            let weight = getRandomInt(1, maximumWeight);
+            edge.addWeight(weight);
+        })
     }
 
     deepCopy(){

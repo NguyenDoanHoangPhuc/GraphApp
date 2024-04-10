@@ -60,6 +60,8 @@ class AdjacencyMatrix {
         }
     }
 
+    
+
     print(){
         for (let i = 1; i <= this.vertices_num; i++){
             for (let j = 1; j <= this.vertices_num; j++)
