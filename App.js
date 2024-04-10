@@ -34,6 +34,7 @@ import InputGraph from './screens/InputGraph';
 import DrawGraph from './screens/DrawGraph';
 import GraphSearch from './screens/GraphSearch';
 import InputGraphSearch from './screens/InputGraphSearch';
+import Test from './screens/Test';
 
 //Navigation
 import { NavigationContainer } from '@react-navigation/native';
@@ -52,6 +53,7 @@ library.add(fab, faSquareCheck, faXmark, faDice, faPaintBrush, faArrowLeft, faCh
 const Stack = createNativeStackNavigator();
 
 import Animated from 'react-native-reanimated';
+
 
 
 
@@ -99,6 +101,13 @@ function App() {
           animation: 'fade'
           
           }}/>
+        <Stack.Screen name="Test" component={Test} options={{
+          headerShown: false,
+          animationTypeForReplace: 'pop',
+          animation: 'fade'
+          
+          }}/>
+
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -4,17 +4,23 @@ import Svg, { Circle, Text as SvgText, G, Line, Path, Polygon } from 'react-nati
 
 import Graph, { Vertex, Edge, UndirectedSimpleGraph } from '../graph_data/Graph.js'
 import color from '../constants/color.js';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry.js';
 
 
-const checkDirectGraph = (graph) => {
-  if (graph == 'UndirectedSimpleGraph' ||
-      graph == 'UndirectedMultiGraph' ||
-      graph == 'PseudoGraph')
-      return 'undirected';
-  else return 'directed';
-}
+
+
+
 
 function RenderGraph(props) {
+
+  const checkDirectGraph = (graph) => {
+    if (graph == 'UndirectedSimpleGraph' ||
+        graph == 'UndirectedMultiGraph' ||
+        graph == 'PseudoGraph')
+        return 'undirected';
+    else return 'directed';
+  }
+
   const typeGraph = checkDirectGraph(props.type);
   const lock = props.lock;
   const showWeight = props.showWeight;
@@ -27,7 +33,10 @@ function RenderGraph(props) {
     'stroke': color.lineStroke,
   }
 
-
+  const calculateMultiEdge = (graph, type) => {
+    if (type == 'undirected') return graph.getMultiUndirectedEdges();
+    else return graph.getMultiDirectedEdges();
+  }
 
   const [myGraph, setMyGraph] = useState(props.data);
   const [vertices, setVertices] = useState(props.data.vertices);
@@ -35,10 +44,10 @@ function RenderGraph(props) {
 
 
   const [loops, setLoops] = useState(myGraph.edges.filter((item) => item.isLoop));
-  const [multiEdges, setMultiEdges] = useState(myGraph.edges.filter((item) => !item.isLoop));
-
-
-
+  const [multiEdges, setMultiEdges] = useState(calculateMultiEdge(myGraph, typeGraph));
+ 
+ 
+  
   //addVertexFunction
   
 
@@ -50,7 +59,26 @@ function RenderGraph(props) {
     setVertices(newVertices);
   }
 
-  
+  const handleMutiEdgeCoordinate = (edge, time) => {
+    
+    let x1 = edge.beginVertex.x, x2 = edge.endVertex.x;
+    let y1 = edge.beginVertex.y, y2 = edge.endVertex.y;
+    let midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
+    
+    let distance = 1;
+    if (time % 2 == 0) distance = 30 * (time / 2)
+    else distance = 30 * ((time + 1) / 2);
+    
+    const a = y1 - y2, b =  x2 - x1;
+    
+    
+    const positiveT = Math.sqrt(distance*distance / (a*a + b*b));
+
+    if (time % 2 == 0) return [midX + a * positiveT, midY + b * positiveT];
+    else return [midX - a * positiveT, midY - b * positiveT];
+
+  }
+
 
   useEffect(()=>{
     let newEdges = edges.map((edge) => edge.deepCopy());
@@ -107,11 +135,11 @@ function handleAddEdge(index) {
             cy={vertex.y}
             r={vertex.size}
             stroke={theme['vertexStroke']}
-            strokeWidth={2}
+            strokeWidth={1}
             fill={vertex.color}
           />
           <SvgText
-            fontFamily='Montserrat-Black'
+            fontFamily='Montserrat'
             key={`text_${vertex.id}`}
             x={vertex.x}
             y={vertex.y}
@@ -142,21 +170,23 @@ function handleAddEdge(index) {
           x2={x2}
           y2={y2}
           stroke={theme['stroke']}
-          strokeWidth="2"
+          strokeWidth="1"
         />
       )
 
 
       if (edge.times > 1) {
+        
+
         for (let i = 1; i <= edge.times - 1; i++) {
-          let midX = (x1 + x2) / 2, midY = (y1 + y2) / 2 - 20;
+          let [midX, midY] = handleMutiEdgeCoordinate(edge, i);
           lines.push(
             <Path
               key={i + "curve" + index}
-              d={`M ${x1} ${y1} Q ${midX} ${midY - 10 * i} ${x2} ${y2}`}
+              d={`M${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`}
               stroke={theme['stroke']}
               fill="none"
-              strokeWidth="2"
+              strokeWidth="1"
             />
           );
         }
@@ -192,7 +222,7 @@ function handleAddEdge(index) {
     let x3, y3, x4, y4, x5, y5;
     let s = endVertex.size;
 
-    const AB = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    const AB = Math.sqrt((x2 - x1)*(x2 - x1) + (y2 - y1) *(y2 - y1));
 
     const lambda = (AB - s) / s;
 
@@ -203,18 +233,18 @@ function handleAddEdge(index) {
     const theta = Math.atan2(y3 - y2, x3 - x2);
     const d = 10;
 
-    x4 = x3 + d * Math.cos(theta + Math.PI / 6);
-    y4 = y3 + d * Math.sin(theta + Math.PI / 6);
+    x4 = x3 + d * Math.cos(theta + Math.PI / 8);
+    y4 = y3 + d * Math.sin(theta + Math.PI / 8);
 
-    x5 = x3 + d * Math.cos(theta - Math.PI / 6);
-    y5 = y3 + d * Math.sin(theta - Math.PI / 6);
+    x5 = x3 + d * Math.cos(theta - Math.PI / 8);
+    y5 = y3 + d * Math.sin(theta - Math.PI / 8);
 
     return <Path
       key = {`arrow${startVertex.id}${endVertex.id}${id} `}
       d={`M${x4},${y4} L${x3},${y3} L${x5},${y5} `}
       fill="none"
       stroke={theme['stroke']}
-      strokeWidth="2"
+      strokeWidth="1"
     />
   }
 
@@ -266,7 +296,7 @@ function handleAddEdge(index) {
         d={`M${x4},${y4} L${x3},${y3} L${x5},${y5}`}
         stroke={theme['stroke']}
         fill="none"
-        strokeWidth="2"
+        strokeWidth="1"
       />
     );
   }
@@ -323,7 +353,7 @@ function handleAddEdge(index) {
           x2={x2}
           y2={y2}
           stroke={theme['stroke']}
-          strokeWidth="2"
+          strokeWidth="1"
         />
 
       )
@@ -332,14 +362,14 @@ function handleAddEdge(index) {
 
       if (edge.times > 1) {
         for (let i = 1; i <= edge.times - 1; i++) {
-          let midX = (x1 + x2) / 2, midY = (y1 + y2) / 2 ;
+          let [midX, midY] = handleMutiEdgeCoordinate(edge, i);
           lines.push(
             <Path
               key={i + "curve" + index}
-              d={`M ${x1} ${y1} Q ${midX} ${midY + 30 * ((-1)**i)} ${x2} ${y2}`}
+              d={`M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`}
               stroke={theme['stroke']}
               fill="none"
-              strokeWidth="2"
+              strokeWidth="1"
             />
           );
         }

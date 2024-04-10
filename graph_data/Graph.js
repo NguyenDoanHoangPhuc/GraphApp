@@ -46,8 +46,8 @@ class Edge {
     beginVertex;
     endVertex;
     isLoop;
-    times;
     weight;
+    times;
 
     constructor(beginVertex, endVertex, weight = 0, times = 1) {
         this.beginVertex = beginVertex;
@@ -194,6 +194,49 @@ class Graph {
         })
     }
 
+    getMultiUndirectedEdges(){
+        let multiEdges = [];
+        let mark = Array(this.edges.length).fill(false);
+
+        for (let i = 0; i < this.edges.length; i++){
+            if (mark[i] === true) continue;
+            let count = 1;
+
+            for (let j = i + 1; j < this.edges.length; j++){
+                if (this.edges[i].isUndirectedSame(this.edges[j].beginVertex.id, this.edges[j].endVertex.id)){
+                    count++;
+                    mark[j] = true;
+                }
+            }
+
+            this.edges[i].times = count;
+            multiEdges.push(this.edges[i]);
+        }
+        return multiEdges;
+    }
+
+    getMultiDirectedEdges(){
+        let multiEdges = [];
+        let mark = Array(this.edges.length).fill(false);
+
+        for (let i = 0; i < this.edges.length; i++){
+            if (mark[i] === true) continue;
+            let count = 1;
+
+            for (let j = i + 1; j < this.edges.length; j++){
+                if (this.edges[i].isDirectedSame(this.edges[j].beginVertex.id, this.edges[j].endVertex.id)){
+                    count++;
+                    mark[j] = true;
+                }
+            }
+
+            this.edges[i].times = count;
+            multiEdges.push(this.edges[i]);
+        }
+        return multiEdges;
+    }
+
+
     deepCopy(){
         let newGraph = new Graph();
 
@@ -244,6 +287,13 @@ class UndirectedSimpleGraph extends Graph {
         else if (findUndirectedEdge(this.edges, beginId, endId) != null);
         else super.addEdgeById(beginId, endId);
     }
+
+    addEdgeByIdAndWeight(beginId, endId, weight){ 
+        if (beginId == endId) ;
+        else if (findUndirectedEdge(this.edges, beginId, endId) != null);
+        else super.addEdgeByIdAndWeight(beginId, endId, weight);
+    }
+
 
     createRandomEdge(maximumEdge) {
         let maximumVertex = this.vertices.length;
@@ -304,14 +354,17 @@ class UndirectedMultiGraph extends Graph {
     addEdgeById(beginId, endId) {
         if (beginId === endId);
         else {
-            let changeEdge = findUndirectedEdge(this.edges, beginId, endId);
-            if (changeEdge != null) {
-                changeEdge.times++;
-            }
-            else super.addEdgeById(beginId, endId);
+            super.addEdgeById(beginId, endId);
         }
-
     }
+    
+    addEdgeByIdAndWeight(beginId, endId, weight) {
+        if (beginId === endId);
+        else {
+            super.addEdgeByIdAndWeight(beginId, endId, weight);
+        }
+    }
+
 
     createRandomEdge(maximumEdge) {
        let maximumVertex = this.vertices.length;
@@ -363,11 +416,11 @@ class PseudoGraph extends Graph {
     }
 
     addEdgeById(beginId, endId) {
-        let changeEdge = findUndirectedEdge(this.edges, beginId, endId);
-        if (changeEdge != null) {
-            changeEdge.times++;
-        }
-        else super.addEdgeById(beginId, endId);
+        super.addEdgeById(beginId, endId);
+    }
+
+    addEdgeByIdAndWeight(beginId, endId, weight) {
+        super.addEdgeByIdAndWeight(beginId, endId, weight);
     }
 
     createRandomEdge(maximumEdge) {
@@ -410,6 +463,13 @@ class DirectedSimpleGraph extends Graph {
         else if (findDirectedEdge(this.edges, beginId, endId) != null);
         else super.addEdgeById(beginId, endId);
     }
+
+    addEdgeByIdAndWeight(beginId, endId, weight) {
+        if (beginId === endId);
+        else if (findDirectedEdge(this.edges, beginId, endId) != null);
+        else super.addEdgeByIdAndWeight(beginId, endId, weight);
+    }
+
 
     createRandomEdge(maximumEdge) {
         let maximumVertex = this.vertices.length;
@@ -468,11 +528,15 @@ class DirectedMultiNoLoopGraph extends Graph {
     addEdgeById(beginId, endId) {
         if (beginId === endId);
         else {
-            let changeEdge = findDirectedEdge(this.edges, beginId, endId);
-            if (changeEdge != null) {
-                changeEdge.times++;
-            }
-            else super.addEdgeById(beginId, endId);
+            super.addEdgeById(beginId, endId);
+        }
+
+    }
+
+    addEdgeByIdAndWeight(beginId, endId, w) {
+        if (beginId === endId);
+        else {
+            super.addEdgeByIdAndWeight(beginId, endId, w);
         }
 
     }
@@ -527,11 +591,11 @@ class DirectedMultiLoopGraph extends Graph {
     }
 
     addEdgeById(beginId, endId) {
-        let changeEdge = findDirectedEdge(this.edges, beginId, endId);
-        if (changeEdge != null) {
-            changeEdge.times++;
-        }
-        else super.addEdgeById(beginId, endId);
+        super.addEdgeById(beginId, endId);
+    }
+
+    addEdgeByIdAndWeight(beginId, endId, w) {
+        super.addEdgeByIdAndWeight(beginId, endId, w);
     }
 
     createRandomEdge(maximumEdge) {

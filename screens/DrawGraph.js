@@ -97,7 +97,13 @@ function DrawGraph({ route, navigation }) {
                 if (parseInt(beginId) <= parseInt(verticesNum) && parseInt(endId) <= parseInt(verticesNum)) {
                     let newGraph = myGraph.deepCopy();
                     
-                    newGraph.addEdgeByIdAndWeight(parseInt(beginId), parseInt(endId), parseInt(weight));
+                    if (showWeight){
+                        newGraph.addEdgeByIdAndWeight(parseInt(beginId), parseInt(endId), parseInt(weight));
+                    }
+                    else newGraph.addEdgeById(parseInt(beginId), parseInt(endId));
+                    
+                    
+                    
                     setMyGraph(newGraph);
                     setGraphKey(prev => prev + 1);
                     setEdgesNum(prev => parseInt(prev) + 1 + "");
@@ -124,7 +130,7 @@ function DrawGraph({ route, navigation }) {
 
     const graphName = {
         'UndirectedSimpleGraph': 'Đơn đồ thị vô hướng',
-        'UndirectedMultiGraph': 'Đơn đồ thị có hướng',
+        'UndirectedMultiGraph': 'Đa đồ thị vô hướng',
         'PseudoGraph': 'Giả đồ thị',
         'DirectedSimpleGraph': 'Đơn đồ thị có hướng',
         'DirectedMultiNoLoopGraph': 'Đa đồ thị có hướng (không khuyên)',
@@ -332,7 +338,7 @@ function DrawGraph({ route, navigation }) {
                     </View>
                     <View style={styles.graphFrame}>
                         <Svg>
-                            {(myGraph !== null) && <RenderGraph data={myGraph} type={typeOfGraph} key={graphKey} showWeight={showWeight} />}
+                            {(myGraph !== null) && <RenderGraph data={myGraph} type={typeOfGraph} key={graphKey} showWeight={showWeight} lock = {false}/>}
                         </Svg>
 
                     </View>
